@@ -144,6 +144,48 @@ internal sealed class OverlayForm : Form
         };
 
         Visible = false;
+
+        var updateTimer = new System.Windows.Forms.Timer { Interval = 4000 };
+        updateTimer.Tick += async (_, _) =>
+        {
+            updateTimer.Stop();
+            updateTimer.Dispose();
+            await CheckForUpdatesAsync();
+        };
+        updateTimer.Start();
+    }
+
+    private async Task CheckForUpdatesAsync()
+    {
+        string? tag = await UpdateChecker.GetNewerTagAsync();
+        if (tag == null) return;
+
+        var page = new TaskDialogPage
+        {
+            Caption = "PrinceWM",
+            Heading = $"Update available: {tag}",
+            Text = "A newer version of PrinceWM is available on GitHub.",
+            Icon = TaskDialogIcon.Information,
+            Verification = new TaskDialogVerificationCheckBox("Don't notify me about updates again"),
+        };
+        var download = new TaskDialogButton("Download");
+        page.Buttons.Add(download);
+        page.Buttons.Add(new TaskDialogButton("Later"));
+
+        TaskDialogButton result;
+        try { result = TaskDialog.ShowDialog(page); }
+        catch (Exception ex) { Core.Log.Ex("UpdateChecker.ShowDialog", ex); return; }
+
+        if (page.Verification.Checked) UpdateChecker.DisableForever();
+        if (result == download)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(
+                    new System.Diagnostics.ProcessStartInfo(UpdateChecker.ReleasesUrl) { UseShellExecute = true });
+            }
+            catch (Exception ex) { Core.Log.Ex("UpdateChecker.OpenUrl", ex); }
+        }
     }
 
     private static System.Drawing.Icon? LoadAppIcon()
