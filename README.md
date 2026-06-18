@@ -10,11 +10,11 @@ arrange, annotate, and snap them however you want.
 - **Real MRU ordering.** Alt+Tab cycles through open windows in real most-recently-used
   order, just as in native tab switchers.
 - **Seamless switching.** The chosen preview fades away smoothly and turns into the real
-  window (edges square off, outlines dissolve).
+  window
 - **App stacks and drill-down.** All windows belonging to the same application form a
   tile. Click-mouse on the tile to unfold its windows in an individual page.
 - **Pinboard mode.** Paste any image or stickies from the clipboard onto the canvas.
-- **Paint mode.** Draw freely on the canvas (also optionally draw using a Pen).
+- **Paint mode.** Draw freely on the canvas
 - **Live editing.** Live edit colors, grid, tile style, glow, animations, background,
   wallpaper, etc.
 - **Drag to tile (beta).** Drop one window's tile onto another, snapping real windows
