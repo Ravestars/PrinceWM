@@ -1,0 +1,29 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+publish/
+*.dll
+*.exe
+*.pdb
+
+# Runtime / logs
+*.log
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+.vscode/
+
+# OS junk
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# NuGet
+*.nupkg
+packages/
