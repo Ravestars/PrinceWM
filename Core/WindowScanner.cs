@@ -156,30 +156,21 @@ internal static class WindowScanner
         if (IsIconic(hWnd))
             ShowWindow(hWnd, SW_RESTORE);
 
-        uint foreThread = GetWindowThreadProcessId(GetForegroundWindowSafe(), out _);
-        uint thisThread = GetCurrentThreadId();
-        uint targetThread = GetWindowThreadProcessId(hWnd, out _);
-
-        // Only do the AttachThreadInput dance when ANOTHER process owns the foreground. When we
-        // already own it (the normal case when committing from the overlay), plain
-        // SetForegroundWindow is permitted - and attaching our input queue to the target's thread
-        // can stall if that thread is busy (a game sitting in its render loop), which froze the
-        // switch near the end. Skipping the attach in that case keeps the hand-off instant.
-        bool attach = foreThread != thisThread && foreThread != targetThread;
-        if (attach)
-        {
-            AttachThreadInput(thisThread, foreThread, true);
-            AttachThreadInput(thisThread, targetThread, true);
-        }
+        // Make SetForegroundWindow take effect immediately and synchronously WITHOUT attaching
+        // our input queue to the target's thread. Attaching is what made the switch crisp, but it
+        // stalls if the target thread is busy (a game in its render loop) - that was the freeze.
+        // Zeroing the foreground-lock timeout for the call grants the foreground change at once,
+        // so the target is the foreground window before the overlay hides (no old-window flash),
+        // with no thread attach to stall on. The timeout is restored right after.
+        uint prevTimeout = 0;
+        bool gotTimeout = SystemParametersInfoGet(SPI_GETFOREGROUNDLOCKTIMEOUT, 0, ref prevTimeout, 0);
+        SystemParametersInfoSet(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, IntPtr.Zero, 0); // in-memory, no broadcast
 
         BringWindowToTop(hWnd);
         SetForegroundWindow(hWnd);
 
-        if (attach)
-        {
-            AttachThreadInput(thisThread, foreThread, false);
-            AttachThreadInput(thisThread, targetThread, false);
-        }
+        if (gotTimeout)
+            SystemParametersInfoSet(SPI_SETFOREGROUNDLOCKTIMEOUT, 0, (IntPtr)prevTimeout, 0);
     }
 
     private static IntPtr GetForegroundWindowSafe()

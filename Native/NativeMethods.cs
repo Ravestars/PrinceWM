@@ -147,6 +147,16 @@ internal static class NativeMethods
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern bool SystemParametersInfo(uint action, uint uiParam, System.Text.StringBuilder pvParam, uint winIni);
 
+    [DllImport("user32.dll", EntryPoint = "SystemParametersInfoW")]
+    public static extern bool SystemParametersInfoGet(uint action, uint uiParam, ref uint pvParam, uint winIni);
+
+    [DllImport("user32.dll", EntryPoint = "SystemParametersInfoW")]
+    public static extern bool SystemParametersInfoSet(uint action, uint uiParam, IntPtr pvParam, uint winIni);
+
+    public const uint SPI_GETFOREGROUNDLOCKTIMEOUT = 0x2000;
+    public const uint SPI_SETFOREGROUNDLOCKTIMEOUT = 0x2001;
+    public const uint SPIF_SENDCHANGE = 0x0002;
+
     public static string GetWallpaperPath()
     {
         var sb = new System.Text.StringBuilder(520);
