@@ -160,7 +160,13 @@ internal static class WindowScanner
         uint thisThread = GetCurrentThreadId();
         uint targetThread = GetWindowThreadProcessId(hWnd, out _);
 
-        if (foreThread != targetThread)
+        // Only do the AttachThreadInput dance when ANOTHER process owns the foreground. When we
+        // already own it (the normal case when committing from the overlay), plain
+        // SetForegroundWindow is permitted - and attaching our input queue to the target's thread
+        // can stall if that thread is busy (a game sitting in its render loop), which froze the
+        // switch near the end. Skipping the attach in that case keeps the hand-off instant.
+        bool attach = foreThread != thisThread && foreThread != targetThread;
+        if (attach)
         {
             AttachThreadInput(thisThread, foreThread, true);
             AttachThreadInput(thisThread, targetThread, true);
@@ -169,7 +175,7 @@ internal static class WindowScanner
         BringWindowToTop(hWnd);
         SetForegroundWindow(hWnd);
 
-        if (foreThread != targetThread)
+        if (attach)
         {
             AttachThreadInput(thisThread, foreThread, false);
             AttachThreadInput(thisThread, targetThread, false);

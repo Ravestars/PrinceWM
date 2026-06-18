@@ -90,6 +90,20 @@ internal sealed class WindowCapture : IDisposable
         try { _session.IsCursorCaptureEnabled = false; } catch { }
 
         _session.StartCapture();
+
+        // Windows 10 only: sessions are torn down and restarted on every open (to drop the yellow
+        // capture border, which Win10 can't disable). A fresh session only delivers a frame when
+        // the window repaints, so a static already-open window would stay blank. Nudge it to
+        // repaint. Win11 keeps its sessions alive, so this isn't needed there - left untouched.
+        if (!NativeMethods.IsWindows11)
+        {
+            try
+            {
+                NativeMethods.RedrawWindow(Hwnd, IntPtr.Zero, IntPtr.Zero,
+                    NativeMethods.RDW_INVALIDATE | NativeMethods.RDW_ERASE | NativeMethods.RDW_ALLCHILDREN);
+            }
+            catch { }
+        }
     }
 
     public void Pause()

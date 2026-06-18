@@ -800,24 +800,8 @@ internal sealed class OverlayForm : Form
     {
         IntPtr hwnd = _selected >= 0 && _selected < _items.Count ? _items[_selected].Hwnd : IntPtr.Zero;
 
-        // Raise the target to the top of the Z-order WITHOUT activating it. Activation does a
-        // foreground handoff that can block on a busy app (e.g. a game like Garry's Mod that
-        // isn't pumping messages), and doing that here would stall the render thread with the
-        // last frame frozen on screen. Raising is cheap and non-blocking, so when we hide the
-        // overlay the live target window is revealed instantly - the correct window, no freeze.
-        if (hwnd != IntPtr.Zero)
-        {
-            BumpMru(hwnd);
-            if (NativeMethods.IsIconic(hwnd)) NativeMethods.ShowWindow(hwnd, NativeMethods.SW_RESTORE);
-            NativeMethods.SetWindowPos(hwnd, NativeMethods.HWND_TOP, 0, 0, 0, 0,
-                NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_SHOWWINDOW);
-        }
-
+        if (hwnd != IntPtr.Zero) { BumpMru(hwnd); WindowScanner.Activate(hwnd); }
         HideOverlay();
-
-        // Now claim focus. This can block on a busy game, but the overlay is already gone and the
-        // game is on screen, so the wait is invisible instead of a frozen final frame.
-        if (hwnd != IntPtr.Zero) WindowScanner.Activate(hwnd);
     }
 
     private static void ApplyTunables()
@@ -874,10 +858,22 @@ internal sealed class OverlayForm : Form
             return;
         }
 
-        _captures.SetStaticWallpaper(NativeMethods.GetWallpaperPath());
+        string wp = NativeMethods.GetWallpaperPath();
+        _captures.SetStaticWallpaper(wp);
+
+        bool win11 = NativeMethods.IsWindows11;
+
+        // Windows 10: live-capturing the animated/desktop wallpaper window via WGC is unreliable,
+        // so just use the static desktop image as the backdrop (covers both static and animated
+        // wallpapers - the static frame shows either way). The Win11 path below is unchanged.
+        if (!win11)
+        {
+            Core.Log.Write($"Win10 wallpaper: path='{wp}' exists={System.IO.File.Exists(wp)} bitmap={(_captures.WallpaperBitmap != null)}");
+            _captures.ClearWallpaper();
+            return;
+        }
 
         IntPtr animated = NativeMethods.FindAnimatedWallpaperWindow();
-        bool win11 = NativeMethods.IsWindows11;
 
         if (animated != IntPtr.Zero)
         {
@@ -947,9 +943,9 @@ internal sealed class OverlayForm : Form
         _drawPanning = false;
         SetDesktopIconsHidden(false);
 
-        Hide();
         _captures?.SaveSnapshots();
         _captures?.PauseAll();
+        Hide();
         LayoutStore.Save(SavedPositions);
         SizeStore.Save(SavedSizes);
         PinStore.Save(_pins);
