@@ -2,7 +2,7 @@
 [Setup]
 AppId={{8E0F7A12-DR1F-4FE8-B9A5-PrinceWM0000001}
 AppName=PrinceWM
-AppVersion=1.2.0
+AppVersion=1.2.1
 AppPublisher=prince
 DefaultDirName={autopf}\PrinceWM
 DefaultGroupName=PrinceWM

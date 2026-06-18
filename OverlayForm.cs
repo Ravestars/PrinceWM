@@ -800,8 +800,24 @@ internal sealed class OverlayForm : Form
     {
         IntPtr hwnd = _selected >= 0 && _selected < _items.Count ? _items[_selected].Hwnd : IntPtr.Zero;
 
-        if (hwnd != IntPtr.Zero) { BumpMru(hwnd); WindowScanner.Activate(hwnd); }
+        // Raise the target to the top of the Z-order WITHOUT activating it. Activation does a
+        // foreground handoff that can block on a busy app (e.g. a game like Garry's Mod that
+        // isn't pumping messages), and doing that here would stall the render thread with the
+        // last frame frozen on screen. Raising is cheap and non-blocking, so when we hide the
+        // overlay the live target window is revealed instantly - the correct window, no freeze.
+        if (hwnd != IntPtr.Zero)
+        {
+            BumpMru(hwnd);
+            if (NativeMethods.IsIconic(hwnd)) NativeMethods.ShowWindow(hwnd, NativeMethods.SW_RESTORE);
+            NativeMethods.SetWindowPos(hwnd, NativeMethods.HWND_TOP, 0, 0, 0, 0,
+                NativeMethods.SWP_NOMOVE | NativeMethods.SWP_NOSIZE | NativeMethods.SWP_NOACTIVATE | NativeMethods.SWP_SHOWWINDOW);
+        }
+
         HideOverlay();
+
+        // Now claim focus. This can block on a busy game, but the overlay is already gone and the
+        // game is on screen, so the wait is invisible instead of a frozen final frame.
+        if (hwnd != IntPtr.Zero) WindowScanner.Activate(hwnd);
     }
 
     private static void ApplyTunables()
@@ -931,9 +947,9 @@ internal sealed class OverlayForm : Form
         _drawPanning = false;
         SetDesktopIconsHidden(false);
 
+        Hide();
         _captures?.SaveSnapshots();
         _captures?.PauseAll();
-        Hide();
         LayoutStore.Save(SavedPositions);
         SizeStore.Save(SavedSizes);
         PinStore.Save(_pins);

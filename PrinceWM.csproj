@@ -22,7 +22,7 @@
     <Company>prince</Company>
     <Product>PrinceWM</Product>
     <Copyright>Copyright © 2026 prince</Copyright>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
