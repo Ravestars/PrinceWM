@@ -28,6 +28,8 @@ Requires the .NET 9 SDK on Windows 10/11.
 dotnet build PrinceWM.csproj -c Release
 ```
 
+Oh also people who area reading this the app was vibe coded by a bit mostly multiscreen support because i dont own two screens i had to use claude code for that part. Please understand <33
+
 The application will need to run as an administrator because it hooks globally.
 
 ## Technical details
